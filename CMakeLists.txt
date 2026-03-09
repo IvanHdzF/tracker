@@ -12,6 +12,7 @@ target_sources(app PRIVATE
                 src/main.c
                 sim_app/gps/gps.c
                 sim_app/modem/sim_modem.c
+                coap_app/coap.c
                 )
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
