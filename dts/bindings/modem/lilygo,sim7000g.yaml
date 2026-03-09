@@ -1,0 +1,25 @@
+description: LilyGO SIM7000G modem wiring
+
+compatible: "lilygo,sim7000g"
+
+properties:
+  uart:
+    type: phandle
+    required: true
+    description: UART used to communicate with the modem
+
+  pwrkey-gpios:
+    type: phandle-array
+    required: true
+
+  dtr-gpios:
+    type: phandle-array
+    required: false
+
+  gps-enabled:
+    type: boolean
+    required: false
+
+  gps-ant-pwr-pin:
+    type: int
+    required: false
