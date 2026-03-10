@@ -44,11 +44,17 @@ static void check_xtra_age(const struct tm *local_time, const struct tm *inject)
     if (diff_h < 0)
     {
         LOG_INF("XTRA inject time is in the future. Update the modem clock before using XTRA");
+        // TODO: Implement AT+CLTS=1 command on driver to let modem update its clock from network, and remove this log and check.
 
     }
 
     if (diff_h > 72) {
         LOG_INF("XTRA older than 72h, refreshing clock before using XTRA");
+        // Update clock just in case, even if the inject time is not in the future. 
+        // This is to avoid cases where the local time is wrong and the diff is small but still the xtra is old.
+
+        
+        // TODO: Implement AT+CLTS=1 command on driver to let modem update its clock from network, and remove this log and check.
         //return mdm_sim7000_download_xtra(1, "xtra3grc_72h.bin");
     }
 }
@@ -129,7 +135,7 @@ int sim_gps_start_xtra(void)
     }
 
     mdm_sim7000_stop_network();
-    
+
     ret = mdm_sim7000_start_gnss_xtra();
     if (ret < 0) {
         LOG_ERR("Could not start GNSS with XTRA!");
