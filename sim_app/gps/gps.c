@@ -7,9 +7,86 @@
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/drivers/modem/simcom-sim7000.h>
 #include <stdint.h>
+#include <time.h>
 
 
 LOG_MODULE_REGISTER(simcom_gps, LOG_LEVEL_INF);
+
+/* Helpers */
+
+/*
+ * Returns the difference in hours between two struct tm timestamps.
+ * Positive result means local_time is later than inject_time.
+ */
+static int diff_hours_between_tm(const struct tm *local_time, const struct tm *inject_time)
+{
+    struct tm a = *local_time;   /* copy because mktime may modify fields */
+    struct tm b = *inject_time;
+
+    time_t ta = mktime(&a);
+    time_t tb = mktime(&b);
+
+    if (ta == (time_t)-1 || tb == (time_t)-1) {
+        return 0; /* fallback if conversion fails */
+    }
+
+    double diff_sec = difftime(ta, tb);
+    return (int)(diff_sec / 3600);
+}
+
+
+static void check_xtra_age(const struct tm *local_time, const struct tm *inject)
+{
+    int diff_h = diff_hours_between_tm(local_time, inject);
+
+    LOG_INF("XTRA age: %d hours", diff_h);
+
+    if (diff_h < 0)
+    {
+        LOG_INF("XTRA inject time is in the future. Update the modem clock before using XTRA");
+
+    }
+
+    if (diff_h > 72) {
+        LOG_INF("XTRA older than 72h, refreshing clock before using XTRA");
+        //return mdm_sim7000_download_xtra(1, "xtra3grc_72h.bin");
+    }
+}
+
+int check_and_refresh_xtra(void)
+{
+    int16_t duration_h;
+    struct tm inject, local_time;
+    int ret;
+
+    ret = mdm_sim7000_get_local_time(&local_time);
+    if (ret) {
+        LOG_ERR("Could not get local time!");
+        return ret;
+    }
+
+    LOG_INF("Local time: %04d-%02d-%02d %02d:%02d:%02d",
+        local_time.tm_year,
+        local_time.tm_mon + 1,
+        local_time.tm_mday,
+        local_time.tm_hour,
+        local_time.tm_min,
+        local_time.tm_sec);
+
+    ret = mdm_sim7000_query_xtra_validity(&duration_h, &inject);
+    if (ret) {
+        /* safest fallback: download */
+        LOG_INF("Could not query xtra validity. Downloading new file");        
+        //return mdm_sim7000_download_xtra(1, "xtra3grc_72h.bin");
+    }
+    
+
+    /* Compare manually local time and inject time */
+    check_xtra_age(&local_time, &inject);
+    return 0;
+}
+
+/* API */
 
 int sim_gps_start(void)
 {
@@ -25,7 +102,7 @@ int sim_gps_start(void)
 
     struct sim7000_gnss_data data = {0};
 
-    for (size_t i = 0; i < 10; i++) {
+    while (data.fix_status == false) {
 
         ret = mdm_sim7000_query_gnss(&data);
 
@@ -36,13 +113,57 @@ int sim_gps_start(void)
         k_msleep(1000);
     }
 
-    ret = mdm_sim7000_stop_gnss();
-    if (ret < 0) {
-        LOG_ERR("Could not stop GNSS!");
-        return ret;
-    }
+    return 0;
+}
+
+int sim_gps_start_xtra(void)
+{
+    int ret;
 
     mdm_sim7000_start_network();
 
+    ret = check_and_refresh_xtra();
+    if (ret < 0) {
+        LOG_ERR("Could not check and refresh xtra!");
+        return ret;
+    }
+
+    mdm_sim7000_stop_network();
+    
+    ret = mdm_sim7000_start_gnss_xtra();
+    if (ret < 0) {
+        LOG_ERR("Could not start GNSS with XTRA!");
+        return ret;
+    }
+
+    struct sim7000_gnss_data data = {0};
+
+    while (data.fix_status == false) {
+
+        ret = mdm_sim7000_query_gnss(&data);
+
+        if (ret == -EAGAIN) {
+            LOG_WRN("GNSS fix not available yet");
+        }
+
+        k_msleep(10000);
+    }
+
     return 0;
+}
+
+int sim_gps_get_data(struct sim7000_gnss_data *data)
+{
+    int ret = mdm_sim7000_query_gnss(data);
+    if (ret < 0) {
+        LOG_ERR("Failed to query GNSS data");
+        return ret;
+    }
+
+    return 0;
+}
+
+int sim_gps_stop(void)
+{
+    return mdm_sim7000_stop_gnss();
 }

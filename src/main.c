@@ -68,23 +68,11 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
     return 0;
 }
 
-
-
-int main(void)
+static int coap_sample(void)
 {
-    int err;
+    mdm_sim7000_start_network();
 
-    if(sim_modem_check_ready() != 0)
-    {
-        LOG_ERR("Modem device not ready");
-        return -1;
-    }
-
-    LOG_INF("Starting SIM7000 Zephyr sample");
-
-
-    sim_modem_print_info();
-
+    int err = 0;
     int sock = coap_app_connect_to_server(TEST_SERVER_ENDPOINT, TEST_SERVER_PORT);
     if (sock < 0) {
         LOG_ERR("Failed to connect to CoAP server");
@@ -112,28 +100,95 @@ int main(void)
     err = coap_app_receive_message(sock, buffer, sizeof(buffer));
     if (err < 0) {
         LOG_ERR("Failed to receive CoAP response");
-        return err;
+        goto out;
     }
 
     err = coap_app_send_get_request(sock, COAP_RX_RESOURCE);
     if (err < 0) {
         LOG_ERR("Failed to send CoAP request");
-        return err;
+        goto out;
     }
 
     err = coap_app_receive_message(sock, buffer, sizeof(buffer));
     if (err < 0) {
         LOG_ERR("Failed to receive CoAP response");
-        return err;
+        goto out;
     }
 
-
+out:
     /* Cleanup */
     err = coap_app_disconnect_from_server(sock);
     if (err < 0) {
         LOG_ERR("Failed to disconnect from CoAP server");
         return err;
     }
+
+    return err;
+}
+
+static int gps_sample(void)
+{
+    int err = sim_gps_start();
+    if (err < 0) {
+        LOG_ERR("Failed to initialize GPS");
+        return err;
+    }
+
+    struct sim7000_gnss_data data;
+    err = sim_gps_get_data(&data);
+    if (err < 0) {
+        LOG_ERR("Failed to get GPS data");
+        return err;
+    }
+
+    LOG_INF("GPS Data: Latitude: %d, Longitude: %d, Altitude: %d",
+            data.lat, data.lon, data.alt);
+
+    return 0;
+}
+
+static int gps_sample_xtra(void)
+{
+    int err = sim_gps_start_xtra();
+    if (err < 0) {
+        LOG_ERR("Failed to initialize GPS with XTRA");
+        return err;
+    }
+
+    struct sim7000_gnss_data data;
+    err = sim_gps_get_data(&data);
+    if (err < 0) {
+        LOG_ERR("Failed to get GPS data");
+        return err;
+    }
+
+    LOG_INF("GPS Data: Latitude: %d, Longitude: %d, Altitude: %d",
+            data.lat, data.lon, data.alt);
+
+    return 0;
+}
+
+
+
+int main(void)
+{
+    int err;
+
+    if(sim_modem_check_ready() != 0)
+    {
+        LOG_ERR("Modem device not ready");
+        return -1;
+    }
+
+    LOG_INF("Starting SIM7000 Zephyr sample");
+
+
+
+    sim_modem_print_info();
+
+    gps_sample();
+
+    // coap_sample();
 
     LOG_INF("Program completed successfully");
 
