@@ -1,7 +1,8 @@
-# Sierra Wireless HL78XX Sample options
-
 # Copyright (c) 2025 Netfeasa
 # SPDX-License-Identifier: Apache-2.0
 
-source "samples/net/common/Kconfig"
-source "Kconfig.zephyr"
+menu "Tracker"
+
+source "$(APPLICATION_SOURCE_DIR)/components/ble_stack/Kconfig"
+
+endmenu
