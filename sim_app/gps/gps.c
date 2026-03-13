@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <time.h>
 
+static postproc_fn_t postproc = NULL;
 
 LOG_MODULE_REGISTER(simcom_gps, LOG_LEVEL_INF);
 
@@ -92,6 +93,30 @@ int check_and_refresh_xtra(void)
     return 0;
 }
 
+static void wait_until_fix(void)
+{
+    int err = 0;
+    struct sim7000_gnss_data data = {0};
+
+    while (data.fix_status == false) {
+
+        err = mdm_sim7000_query_gnss(&data);
+
+        if (err == -EAGAIN) {
+            LOG_WRN("GNSS fix not available yet");
+        }
+
+        if (postproc != NULL) {
+            postproc(&data, sizeof(data));
+        } else
+        {
+            LOG_WRN("Postprocess not set!");
+        }
+
+        k_msleep(1000);
+    }
+}
+
 /* API */
 
 int sim_gps_start(void)
@@ -106,18 +131,7 @@ int sim_gps_start(void)
         return ret;
     }
 
-    struct sim7000_gnss_data data = {0};
-
-    while (data.fix_status == false) {
-
-        ret = mdm_sim7000_query_gnss(&data);
-
-        if (ret == -EAGAIN) {
-            LOG_WRN("GNSS fix not available yet");
-        }
-
-        k_msleep(1000);
-    }
+    wait_until_fix();
 
     return 0;
 }
@@ -142,19 +156,9 @@ int sim_gps_start_xtra(void)
         return ret;
     }
 
-    struct sim7000_gnss_data data = {0};
+    wait_until_fix();
 
-    while (data.fix_status == false) {
-
-        ret = mdm_sim7000_query_gnss(&data);
-
-        if (ret == -EAGAIN) {
-            LOG_WRN("GNSS fix not available yet");
-        }
-
-        k_msleep(10000);
-    }
-
+    LOG_INF("GNSS fix acquired with XTRA!");
     return 0;
 }
 
@@ -163,13 +167,25 @@ int sim_gps_get_data(struct sim7000_gnss_data *data)
     int ret = mdm_sim7000_query_gnss(data);
     if (ret < 0) {
         LOG_ERR("Failed to query GNSS data");
-        return ret;
     }
 
-    return 0;
+    if (postproc != NULL) {
+        postproc(data, sizeof(*data));
+    } else
+    {
+        LOG_WRN("Postprocess not set!");
+    }
+
+    return ret;
 }
 
 int sim_gps_stop(void)
 {
     return mdm_sim7000_stop_gnss();
+}
+
+
+void sim_gps_postproc_set(postproc_fn_t fn)
+{
+    postproc = fn;
 }
