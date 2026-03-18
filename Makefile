@@ -3,10 +3,16 @@
 BOARD=esp_wrover_kit/esp32/procpu
 BUILD_DIR=build
 
+# Include external zephyr modules
+ZEPHYR_EXTRA_MODULES?=$(shell realpath ../ble_mgr)
+
+
 build:
+	ZEPHYR_EXTRA_MODULES=$(ZEPHYR_EXTRA_MODULES) \
 	west build -d $(BUILD_DIR) -b $(BOARD) .
 
 rebuild:
+	ZEPHYR_EXTRA_MODULES=$(ZEPHYR_EXTRA_MODULES) \
 	west build -d $(BUILD_DIR) -p always -b $(BOARD)
 
 clean:

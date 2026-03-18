@@ -16,10 +16,10 @@
 #include "sim_app/gps/gps.h"
 #include "sim_app/modem/sim_modem.h"
 #include "coap_app/coap.h"
-#include "ble_stack/user_api.h"
+#include <ble_mgr/ble_stack/user_api.h>
 
 // TODO: Move this header to app layer instead
-#include "ble_stack/gatt_db/service_cts.h"
+#include <ble_stack/gatt_db/service_cts.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 

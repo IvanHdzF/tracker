@@ -1,8 +1,0 @@
-# Copyright (c) 2025 Netfeasa
-# SPDX-License-Identifier: Apache-2.0
-
-menu "Tracker"
-
-source "$(APPLICATION_SOURCE_DIR)/components/ble_stack/Kconfig"
-
-endmenu
