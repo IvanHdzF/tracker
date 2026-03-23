@@ -162,6 +162,8 @@ int coap_app_send_get_request(int sock, const char *uri_path)
     }
 
     LOG_INF("CoAP GET request sent: Token 0x%04x", next_token);
+
+    return 0;
 }
 
 int coap_app_send_put_request(int sock, const char *uri_path, const char *payload, size_t payload_len)
