@@ -19,7 +19,7 @@
 #include <ble_mgr/ble_stack/user_api.h>
 
 // TODO: Move this header to app layer instead
-#include <ble_stack/gatt_db/service_cts.h>
+#include "ln.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 

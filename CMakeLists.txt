@@ -11,12 +11,17 @@ target_sources(app PRIVATE
                 sim_app/gps/gps.c
                 sim_app/modem/sim_modem.c
                 coap_app/coap.c
+                ble_app/gatt_services/cts.c
+                ble_app/gatt_services/ln.c
             )
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 
 # Add public include dir
-target_include_directories(app PUBLIC include)
+target_include_directories(app PUBLIC 
+                            include
+                            ble_app/gatt_services
+                            )
 
 # Add private include dir
 target_include_directories(app PRIVATE
