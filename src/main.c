@@ -154,8 +154,8 @@ int gps_query_post_process(const void* data, size_t len)
     }
 
 
-    ble_gatt_notify(BT_UUID_GATT_LOC_SPD, &loc, sizeof(loc));
-    ble_gatt_notify(BT_UUID_GATT_PQ, &pos_qual_data, sizeof(pos_qual_data));
+    ble_gatt_server_notify(BT_UUID_GATT_LOC_SPD, &loc, sizeof(loc));
+    ble_gatt_server_notify(BT_UUID_GATT_PQ, &pos_qual_data, sizeof(pos_qual_data));
     return 0;
 }
 
@@ -285,7 +285,7 @@ uint8_t pos_qual_read_cb(const void *data, uint16_t len){
 
 
     // TODO: Temporal hack for updating internal value, remove when refactoring GPS data out of the ble wrapper.
-    ble_gatt_notify(BT_UUID_GATT_PQ, &pos_qual_data, sizeof(pos_qual_data));
+    ble_gatt_server_notify(BT_UUID_GATT_PQ, &pos_qual_data, sizeof(pos_qual_data));
     LOG_INF("Position Quality Data read callback invoked with data:\nflags: %u\nbeacon_num_sol: %u\nbeacon_num_view: %u\ntime_to_first_fix: %u\nephe: %u\nevpe: %u\nhdop: %u\nvdop: %u",
                 pos_qual_data.flags, pos_qual_data.beacon_num_sol, pos_qual_data.beacon_num_view, pos_qual_data.time_to_first_fix,
                 pos_qual_data.ephe, pos_qual_data.evpe, pos_qual_data.hdop, pos_qual_data.vdop);
@@ -305,7 +305,7 @@ int ble_init(void)
         return -1;
     }
 
-    ble_gatt_set_read_cb(BT_UUID_GATT_PQ, pos_qual_read_cb);
+    ble_gatt_server_set_read_cb(BT_UUID_GATT_PQ, pos_qual_read_cb);
     return 0;
 }
 

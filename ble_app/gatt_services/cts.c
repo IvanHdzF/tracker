@@ -34,8 +34,8 @@ BT_GATT_SERVICE_DEFINE(cts_service,
     BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME,
         BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE,
         GATT_DB_PERM_READ | GATT_DB_PERM_WRITE,
-        ble_mgr_chr_read_handler,
-        ble_mgr_chr_write_handler,
+        ble_mgr_server_chr_read_handler,
+        ble_mgr_server_chr_write_handler,
         &cts_current_time_entry
     ),
 
